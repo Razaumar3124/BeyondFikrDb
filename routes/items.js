@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 
-const { User, Blog } = require("../models/model");
+const { User, Blog } = require("../model/model");
 
 // GET /db → return full MongoDB collections
 router.get("/", async (req, res) => {
