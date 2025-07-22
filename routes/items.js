@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 const { User, Blog } = require("../model/model");
 
-// GET /db → return full MongoDB collections
+// GET /db → Return full MongoDB collections
 router.get("/", async (req, res) => {
   try {
     const collections = await mongoose.connection.db.listCollections().toArray();
@@ -23,15 +23,28 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /db/Users → create a new user
+// POST /db/Users → Create a new user (with duplicate check)
 router.post("/Users", async (req, res) => {
   try {
     const { email, contact, password, date, isAdmin } = req.body;
 
+    // Check for required fields
     if (!email || !contact || !password) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    // Check for existing user by email or contact
+    const existingUser = await User.findOne({
+      $or: [{ email }, { contact }]
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        message: "User already exists with this email or contact number",
+      });
+    }
+
+    // Create and save new user
     const newUser = new User({
       email,
       contact,
@@ -41,7 +54,7 @@ router.post("/Users", async (req, res) => {
     });
 
     await newUser.save();
-    res.status(201).json({ message: "User created", user: newUser });
+    res.status(201).json({ message: "User created successfully", user: newUser });
   } catch (error) {
     console.error("Error creating user:", error);
     res.status(500).json({ message: "User creation failed", error });
