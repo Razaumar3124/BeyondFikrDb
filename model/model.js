@@ -1,21 +1,21 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  email: String,
-  mobile: String,
-  password: String,
-  isAdmin: Boolean,
-  date: {
-    type: Date,
-    default: Date.now,
-  },
+  email: { type: String, required: true },
+  contact: { type: String, required: true },
+  password: { type: String, required: true },
+  date: { type: Date, default: Date.now },
+  isAdmin: { type: Boolean, default: false },
 });
 
 const blogSchema = new mongoose.Schema({
-  blogname: String,
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  author: { type: String },
+  createdAt: { type: Date, default: Date.now },
 });
 
-const User = mongoose.model("User", userSchema);
-const Blog = mongoose.model("Blog", blogSchema);
+const User = mongoose.model("User", userSchema, "users");
+const Blog = mongoose.model("Blog", blogSchema, "blogs");
 
 module.exports = { User, Blog };
