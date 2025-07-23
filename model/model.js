@@ -24,6 +24,15 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // ✅ Fields for password reset
+  resetToken: {
+    type: String,
+    default: null,
+  },
+  resetTokenExpiry: {
+    type: Date,
+    default: null,
+  },
 });
 
 // Blog Schema

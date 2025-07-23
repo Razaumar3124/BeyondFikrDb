@@ -1,30 +1,76 @@
-// routes/auth.js or add to items.js
 const express = require("express");
 const router = express.Router();
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 const { User } = require("../model/model");
 
-router.post("/forgot-password", async (req, res) => {
+// ===================== FORGOT PASSWORD =====================
+router.post("/api/auth/forgot-password", async (req, res) => {
   const { email } = req.body;
 
   try {
-    // 1. Check if email is provided
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
-
-    // 2. Check if user with this email exists
     const user = await User.findOne({ email });
+
     if (!user) {
-      return res.status(404).json({ message: "User with this email does not exist" });
+      return res.status(200).json({ message: "If the email exists, a reset link will be sent." });
     }
 
-    // 3. Simulate sending reset link (you can enhance this with real email logic later)
-    console.log(`Reset link would be sent to: ${email}`);
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiry = Date.now() + 3600000; // 1 hour
 
-    return res.status(200).json({ message: "Password reset link sent to your email" });
+    user.resetToken = token;
+    user.resetTokenExpiry = expiry;
+    await user.save();
+
+    const resetLink = `http://localhost:3000/reset-password?token=${token}`;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      to: email,
+      from: "no-reply@yourapp.com",
+      subject: "Password Reset",
+      html: `<p>Click the link below to reset your password:</p>
+             <a href="${resetLink}">${resetLink}</a>
+             <p>This link will expire in 1 hour.</p>`
+    });
+
+    res.status(200).json({ message: "Reset link sent to email." });
   } catch (error) {
     console.error("Forgot password error:", error);
-    return res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error. Try again." });
+  }
+});
+
+// ===================== RESET PASSWORD =====================
+router.post("/api/auth/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Token is invalid or expired" });
+    }
+
+    user.password = newPassword;
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ message: "Something went wrong" });
   }
 });
 
