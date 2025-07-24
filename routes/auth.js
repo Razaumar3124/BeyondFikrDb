@@ -3,19 +3,22 @@ const router = express.Router();
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
-const { User } = require("../model/model"); // adjust path if needed
+const { User } = require("../model/model");
+require("dotenv").config(); // Ensure env is loaded
 
-// FORGOT PASSWORD
+// === FORGOT PASSWORD ===
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
 
   try {
     const user = await User.findOne({ email });
+
+    // Always respond success (for security reasons)
     if (!user) {
       return res.status(200).json({ message: "If the email exists, a reset link will be sent." });
     }
 
-    // Generate token and expiry
+    // Generate reset token
     const token = crypto.randomBytes(32).toString("hex");
     const expiry = Date.now() + 3600000; // 1 hour
 
@@ -23,13 +26,10 @@ router.post("/forgot-password", async (req, res) => {
     user.resetTokenExpiry = expiry;
     await user.save();
 
+    // Frontend reset link
     const resetLink = `http://localhost:5173/reset?token=${token}`;
 
-    // Check env variables
-    console.log("EMAIL_USER:", process.env.EMAIL_USER);
-    console.log("EMAIL_PASS present:", !!process.env.EMAIL_PASS);
-
-    // Transporter
+    // Create transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -38,28 +38,28 @@ router.post("/forgot-password", async (req, res) => {
       },
     });
 
-    // Send reset email
+    // Email content
     await transporter.sendMail({
       to: email,
       from: "no-reply@yourapp.com",
-      subject: "Password Reset",
+      subject: "Password Reset Request",
       html: `
-        <p>Click the link below to reset your password:</p>
+        <h3>Reset your password</h3>
+        <p>Click the link below to reset your password. This link is valid for 1 hour:</p>
         <a href="${resetLink}">${resetLink}</a>
-        <p>This link will expire in 1 hour.</p>
       `,
     });
 
-    console.log("✅ Reset email sent to:", email);
-    res.status(200).json({ message: "Reset link sent to email." });
+    console.log(`✅ Password reset email sent to ${email}`);
+    return res.status(200).json({ message: "Reset link sent to your email." });
 
   } catch (error) {
-    console.error("❌ Forgot password error:", error);
-    res.status(500).json({ message: "Server error. Try again." });
+    console.error("❌ Forgot-password error:", error);
+    return res.status(500).json({ message: "Something went wrong. Please try again later." });
   }
 });
 
-// RESET PASSWORD
+// === RESET PASSWORD ===
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
@@ -70,24 +70,24 @@ router.post("/reset-password", async (req, res) => {
     });
 
     if (!user) {
-      console.log("⚠️ Invalid or expired token");
+      console.warn("⚠️ Token expired or invalid");
       return res.status(400).json({ message: "Token is invalid or expired" });
     }
 
-    console.log("🔐 Hashing new password...");
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     user.password = hashedPassword;
     user.resetToken = undefined;
     user.resetTokenExpiry = undefined;
+
     await user.save();
 
-    console.log("✅ Password reset successful for:", user.email);
-    res.status(200).json({ message: "Password reset successful" });
+    console.log(`✅ Password successfully reset for ${user.email}`);
+    return res.status(200).json({ message: "Password reset successful" });
 
   } catch (error) {
-    console.error("❌ Reset password error:", error);
-    res.status(500).json({ message: "Something went wrong" });
+    console.error("❌ Reset-password error:", error);
+    return res.status(500).json({ message: "Something went wrong. Please try again later." });
   }
 });
 
