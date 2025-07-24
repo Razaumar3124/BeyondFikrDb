@@ -75,10 +75,12 @@ router.post("/reset-password", async (req, res) => {
   }
 
   try {
+    console.log("🔍 Received token:", token);
     const user = await User.findOne({
       resetToken: token,
       resetTokenExpiry: { $gt: Date.now() }
     });
+    console.log("🧪 User found:", user);
 
     if (!user) {
       console.warn("⛔ Invalid or expired token");
