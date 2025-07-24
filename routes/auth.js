@@ -23,7 +23,7 @@ router.post("/forgot-password", async (req, res) => {
     user.resetTokenExpiry = expiry;
     await user.save();
 
-    const resetLink = `http://localhost:3000/reset-password?token=${token}`;
+    const resetLink = `http://localhost:5173/reset?token=${token}`;
 
     // Check env variables
     console.log("EMAIL_USER:", process.env.EMAIL_USER);
