@@ -53,11 +53,9 @@ router.post("/forgot-password", async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    console.log(`✅ Reset link sent to ${email}`);
     return res.status(200).json({ message: "Reset link sent to your email." });
 
   } catch (error) {
-    console.error("❌ Forgot password error:", error);
     return res.status(500).json({ message: "Something went wrong. Please try again later." });
   }
 });
@@ -67,23 +65,17 @@ router.post("/forgot-password", async (req, res) => {
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
-  console.log("📥 Incoming reset password request:", { token, newPassword });
-
   if (!token || !newPassword) {
-    console.warn("⚠️ Missing token or new password");
     return res.status(400).json({ message: "Token and new password are required." });
   }
 
   try {
-    console.log("🔍 Received token:", token);
     const user = await User.findOne({
       resetToken: token,
       resetTokenExpiry: { $gt: Date.now() }
     });
-    console.log("🧪 User found:", user);
 
     if (!user) {
-      console.warn("⛔ Invalid or expired token");
       return res.status(400).json({ message: "Token is invalid or expired" });
     }
 
@@ -95,11 +87,9 @@ router.post("/reset-password", async (req, res) => {
 
     await user.save();
 
-    console.log(`✅ Password reset successful for ${user.email}`);
     return res.status(200).json({ message: "Password reset successful" });
 
   } catch (error) {
-    console.error("❌ Error in reset-password:", error.message, error.stack);
     return res.status(500).json({ message: "Something went wrong. Please try again later." });
   }
 });

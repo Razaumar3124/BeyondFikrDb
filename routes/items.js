@@ -19,7 +19,6 @@ router.get("/", async (req, res) => {
 
     res.json(databaseData);
   } catch (error) {
-    console.error("❌ Error fetching database:", error);
     res.status(500).json({ message: "Failed to fetch database" });
   }
 });
@@ -70,7 +69,6 @@ router.post("/Users", async (req, res) => {
 
     res.status(201).json({ message: "User created successfully", user: responseUser });
   } catch (error) {
-    console.error("❌ Error creating user:", error.message);
     res.status(500).json({ message: "User creation failed" });
   }
 });
