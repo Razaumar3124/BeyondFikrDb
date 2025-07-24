@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs"); // ✅ use bcryptjs if installed via `npm i bcryptjs`
 
 const { User, Blog } = require("../model/model");
 
@@ -18,46 +19,59 @@ router.get("/", async (req, res) => {
 
     res.json(databaseData);
   } catch (error) {
-    console.error("Error fetching database:", error);
-    res.status(500).json({ message: "Failed to fetch database", error });
+    console.error("❌ Error fetching database:", error);
+    res.status(500).json({ message: "Failed to fetch database" });
   }
 });
 
-// POST /db/Users → Create a new user (with duplicate check)
+// POST /db/Users → Signup route with duplicate check and hashed password
 router.post("/Users", async (req, res) => {
   try {
     const { email, contact, password, date, isAdmin } = req.body;
 
-    // Check for required fields
+    // ✅ Validate input
     if (!email || !contact || !password) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Check for existing user by email or contact
+    // ✅ Check for existing user
     const existingUser = await User.findOne({
       $or: [{ email }, { contact }]
     });
 
     if (existingUser) {
       return res.status(409).json({
-        message: "User already exists with this email or contact number",
+        message: "User already exists with this email or contact number"
       });
     }
 
-    // Create and save new user
+    // ✅ Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Create user
     const newUser = new User({
       email,
       contact,
-      password,
+      password: hashedPassword,
       date: date || Date.now(),
-      isAdmin: isAdmin || false,
+      isAdmin: isAdmin || false
     });
 
     await newUser.save();
-    res.status(201).json({ message: "User created successfully", user: newUser });
+
+    // ✅ Return only safe user fields (do not return password)
+    const responseUser = {
+      _id: newUser._id,
+      email: newUser.email,
+      contact: newUser.contact,
+      date: newUser.date,
+      isAdmin: newUser.isAdmin
+    };
+
+    res.status(201).json({ message: "User created successfully", user: responseUser });
   } catch (error) {
-    console.error("Error creating user:", error);
-    res.status(500).json({ message: "User creation failed", error });
+    console.error("❌ Error creating user:", error.message);
+    res.status(500).json({ message: "User creation failed" });
   }
 });
 

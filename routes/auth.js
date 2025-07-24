@@ -5,7 +5,7 @@ const nodemailer = require("nodemailer");
 const { User } = require("../model/model");
 
 // ===================== FORGOT PASSWORD =====================
-router.post("/api/auth/forgot-password", async (req, res) => {
+router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -49,7 +49,7 @@ router.post("/api/auth/forgot-password", async (req, res) => {
 });
 
 // ===================== RESET PASSWORD =====================
-router.post("/api/auth/reset-password", async (req, res) => {
+router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
   try {
