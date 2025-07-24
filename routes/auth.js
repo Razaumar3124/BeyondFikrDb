@@ -67,7 +67,10 @@ router.post("/forgot-password", async (req, res) => {
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
+  console.log("📥 Incoming reset password request:", { token, newPassword });
+
   if (!token || !newPassword) {
+    console.warn("⚠️ Missing token or new password");
     return res.status(400).json({ message: "Token and new password are required." });
   }
 
@@ -78,25 +81,26 @@ router.post("/reset-password", async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Token is invalid or has expired." });
+      console.warn("⛔ Invalid or expired token");
+      return res.status(400).json({ message: "Token is invalid or expired" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
 
-    // Invalidate the token
+    user.password = hashedPassword;
     user.resetToken = undefined;
     user.resetTokenExpiry = undefined;
 
     await user.save();
 
     console.log(`✅ Password reset successful for ${user.email}`);
-    return res.status(200).json({ message: "Password reset successful." });
+    return res.status(200).json({ message: "Password reset successful" });
 
   } catch (error) {
-    console.error("❌ Reset password error:", error);
+    console.error("❌ Error in reset-password:", error.message, error.stack);
     return res.status(500).json({ message: "Something went wrong. Please try again later." });
   }
 });
+
 
 module.exports = router;
