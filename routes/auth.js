@@ -2,15 +2,15 @@ const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const bcrypt = require("bcrypt");
 const { User } = require("../model/model");
 
-// ===================== FORGOT PASSWORD =====================
+// Forgot Password
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
 
   try {
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(200).json({ message: "If the email exists, a reset link will be sent." });
     }
@@ -48,7 +48,7 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-// ===================== RESET PASSWORD =====================
+// Reset Password
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
@@ -62,7 +62,8 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ message: "Token is invalid or expired" });
     }
 
-    user.password = newPassword;
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
     user.resetToken = undefined;
     user.resetTokenExpiry = undefined;
     await user.save();
