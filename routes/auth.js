@@ -27,7 +27,7 @@ router.post("/forgot-password", async (req, res) => {
     await user.save();
 
     // Frontend reset password link
-    const resetLink = `http://localhost:5173/reset?token=${token}`;
+    const resetLink = `https://www.beyondfikr.com/reset?token=${token}`;
 
     // Configure mail transport
     const transporter = nodemailer.createTransport({
@@ -41,7 +41,7 @@ router.post("/forgot-password", async (req, res) => {
     // Email template
     const mailOptions = {
       to: email,
-      from: `"BeyondFikr Support" <no-reply@beyondfikr.com>`,
+      from: `"BeyondFikr Support" info@beyondfikr.com>`,
       subject: "Password Reset Request",
       html: `
         <h3>Password Reset</h3>
