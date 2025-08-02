@@ -31,7 +31,9 @@ router.post("/forgot-password", async (req, res) => {
 
     // Configure mail transport
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: process.env.EMAIL_HOST || "smtpout.secureserver.net",
+      port: parseInt(process.env.EMAIL_PORT) || 587,
+      secure: process.env.EMAIL_SECURE === "true", // false for port 587
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -41,7 +43,7 @@ router.post("/forgot-password", async (req, res) => {
     // Email template
     const mailOptions = {
       to: email,
-      from: `"BeyondFikr Support" info@beyondfikr.com>`,
+      from: `"BeyondFikr Support" <${process.env.EMAIL_USER}>`,
       subject: "Password Reset Request",
       html: `
         <h3>Password Reset</h3>
